@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modbus Device Interface</title>
+    <script src="/static/socket.io.min.js"></script>
+    <style>
+        .coil-box {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            text-align: center;
+            line-height: 50px;
+            border: 1px solid #000;
+            font-size: 15px;
+        }
+
+        .register-box {
+            display: inline-block;
+            width: 50px;
+            height: 50px;
+            margin: 5px;
+            text-align: center;
+            line-height: 50px;
+            border: 1px solid #000;
+            font-size: 20px;
+        }
+
+        .coil-on {
+            background-color: lightgreen;
+            font-size: 20px;
+        }
+
+        .coil-off {
+            background-color: lightcoral;
+            font-size: 20px;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Modbus Device Interface</h1>
+    <div>
+        <h2>Real-time Coil Data</h2>
+        <div id="coilsContainer"></div>
+    </div>
+    <div>
+        <h2>Real-time Holding Registers Data</h2>
+        <div id="registersContainer"></div>
+    </div>
+    <div>
+        <h2>Write Coil</h2>
+        <input type="number" id="coilAddress" placeholder="Address">
+        <input type="checkbox" id="coilValue">
+        <button onclick="writeCoil()">Write Coil</button>
+        <pre id="writeOutput"></pre>
+    </div>
+    <div>
+        <h2>Write Register</h2>
+        <input type="number" id="registerAddress" placeholder="Address">
+        <input type="number" id="registerValue" placeholder="Value">
+        <button onclick="writeRegister()">Write Register</button>
+        <pre id="writeRegisterOutput"></pre>
+    </div>
+
+    <script>
+        const socket = io();
+
+        socket.on('connect', () => {
+            console.log('Connected to server');
+        });
+
+        socket.on('modbus_data', (data) => {
+            console.log('Received modbus data:', data);
+            updateCoils(data.coils);
+        });
+
+        socket.on('holding_registers_data', (data) => {
+            console.log('Received holding registers data:', data);
+            updateRegisters(data.registers);
+        });
+
+        function updateCoils(coils) {
+            const container = document.getElementById('coilsContainer');
+            container.innerHTML = ''; // Clear previous content
+
+            const numBoxes = 10; // Assuming 10 coils
+
+            for (let i = 0; i < numBoxes; i++) {
+                const coilBox = document.createElement('div');
+                coilBox.className = 'coil-box';
+                if (coils[i] !== undefined) {
+                    coilBox.className += ` ${coils[i] ? 'coil-on' : 'coil-off'}`;
+                    coilBox.innerText = i;
+                } else {
+                    coilBox.innerText = 'error';
+                }
+                container.appendChild(coilBox);
+            }
+        }
+
+        function updateRegisters(registers) {
+            const container = document.getElementById('registersContainer');
+            container.innerHTML = ''; // Clear previous content
+
+            const numRegisters = 10; // Assuming 10 registers
+            
+            // Iterate over the registers array
+            registers.forEach((register, index) => {
+                const registerBox = document.createElement('div');
+                registerBox.className = 'register-box';
+                if (register !== undefined) {
+                    registerBox.innerText = register;
+                } else {
+                    registerBox.innerText = 'error';
+                }
+                container.appendChild(registerBox);
+            });
+        }
+
+        function writeCoil() {
+            const address = document.getElementById('coilAddress').value;
+            const value = document.getElementById('coilValue').checked;
+            fetch('/write_coil', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ address: parseInt(address), value: value })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('writeOutput').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+
+        function writeRegister() {
+            const address = document.getElementById('registerAddress').value;
+            const value = document.getElementById('registerValue').value;
+            fetch('/write_register', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ address: parseInt(address), value: parseInt(value) })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('writeRegisterOutput').textContent = JSON.stringify(data, null, 2);
+                });
+        }
+    </script>
+</body>
+
+</html>
