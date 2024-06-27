@@ -13,7 +13,9 @@ without device
 ![img.png](img.png)
 
 with device (only coils)
+
 ![img_1.png](img_1.png)
 
 with device (only holding regs)
+
 ![img_2.png](img_2.png)
