@@ -7,7 +7,8 @@ tested with device simulator
 ## run app in terminal
 python run.py
 ### Frontend
-with no device
+
+without device
 ![img.png](img.png)
 
 with device (only coils)
